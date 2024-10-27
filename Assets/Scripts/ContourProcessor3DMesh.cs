@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using Unity.AI.Navigation;
 
-public class ContourProcessor3D : MonoBehaviour
+public class ContourProcessor3DMesh : MonoBehaviour
 {
     [SerializeField]
     private MeshCollider meshCollider;
@@ -18,6 +18,7 @@ public class ContourProcessor3D : MonoBehaviour
         var tcpServer = GetComponent<TCPServer>();
         if (tcpServer != null)
         {
+            //TcpServerスクリプトのActionに登録
             tcpServer.OnDataReceived += ProcessContourData;
         }
 
@@ -27,10 +28,7 @@ public class ContourProcessor3D : MonoBehaviour
 
     private void Update()
     {
-        if (mesh.vertexCount > 3 && mesh.triangles.Length > 3)
-        {
-            surface.BuildNavMesh();
-        }
+        surface.BuildNavMesh();
     }
 
     private void ProcessContourData(string jsonData)
@@ -39,9 +37,10 @@ public class ContourProcessor3D : MonoBehaviour
         {
             Debug.Log($"Received JSON data: {jsonData}");
             var contourData = JsonUtility.FromJson<ContourData>(jsonData);
-            if (contourData == null || contourData.contours == null)
+            if (contourData == null || contourData.contours == null || contourData.contours.Length == 0)
             {
-                Debug.LogError("Deserialized contourData or contours is null");
+                Debug.Log("No contours detected, clearing mesh and disabling collider.");
+                ClearMeshAndCollider();
                 return;
             }
 
@@ -77,7 +76,7 @@ public class ContourProcessor3D : MonoBehaviour
         mesh.triangles = triangles.ToArray();
 
         // 頂点数と三角形の数をチェック
-        Debug.Log($"Vertex count: {mesh.vertexCount}, Triangle count: {mesh.triangles.Length / 3}");
+        //Debug.Log($"Vertex count: {mesh.vertexCount}, Triangle count: {mesh.triangles.Length / 3}");
 
         if (mesh.vertexCount > 3 && mesh.triangles.Length > 3)
         {
@@ -176,23 +175,11 @@ public class ContourProcessor3D : MonoBehaviour
         vertices = newVertices.ToArray();
     }
 
+    private void ClearMeshAndCollider()
+    {
+        mesh.Clear();
+        meshCollider.sharedMesh = null; // メッシュコライダーを無効化
+    }
+
 }
 
-[Serializable]
-public class ContourData
-{
-    public Contour[] contours;
-}
-
-[Serializable]
-public class Contour
-{
-    public Vertex[] vertices;
-}
-
-[Serializable]
-public class Vertex
-{
-    public float x;
-    public float y;
-}
