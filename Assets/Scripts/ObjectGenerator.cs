@@ -72,7 +72,16 @@ public class ObjectGenerator : MonoBehaviour
     {
         co.SetActive(false);
         co.transform.position = new Vector3(Random.Range(transform.position.x - generatRange / 2.0f, transform.position.x + generatRange / 2.0f), transform.position.y, transform.position.z);
-        co.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+        var rigidbody2D = co.GetComponent<Rigidbody2D>();
+        var rigidbody3D = co.GetComponent<Rigidbody>();
+        if(rigidbody2D == null)
+        {
+            rigidbody3D.velocity = Vector3.zero;
+        }
+        else
+        {
+            rigidbody2D.velocity = Vector2.zero;
+        }
         objects.Enqueue(co);
     }
 }

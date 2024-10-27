@@ -12,7 +12,6 @@ public class TCPServer : MonoBehaviour
     public int mPortNumber = 2001;
 
     private TcpListener mTcpListener;
-    private TcpClient mClient;
 
     public event Action<string> OnDataReceived;
 
@@ -21,20 +20,40 @@ public class TCPServer : MonoBehaviour
         var ip = IPAddress.Parse(mIpAddress);
         mTcpListener = new TcpListener(ip, mPortNumber);
         mTcpListener.Start();
-        await AcceptClientAsync();
+        Debug.Log($"Server started on {mIpAddress}:{mPortNumber}");
+        await ListenForClientsAsync();
     }
 
-    private async Task AcceptClientAsync()
+    private async Task ListenForClientsAsync()
     {
         try
         {
-            mClient = await mTcpListener.AcceptTcpClientAsync();
-            Debug.Log("Connect: " + mClient.Client.RemoteEndPoint);
+            while (true)
+            {
+                Debug.Log("Waiting for client connection...");
+                var client = await mTcpListener.AcceptTcpClientAsync();
+                client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
-            using (var stream = mClient.GetStream())
+                Debug.Log("Connected: " + client.Client.RemoteEndPoint);
+
+                // 非同期でクライアントの処理を開始
+                _ = HandleClientAsync(client);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error in ListenForClientsAsync: {e.Message}");
+        }
+    }
+
+    private async Task HandleClientAsync(TcpClient client)
+    {
+        try
+        {
+            using (var stream = client.GetStream())
             using (var reader = new StreamReader(stream, Encoding.UTF8))
             {
-                while (mClient.Connected)
+                while (IsClientConnected(client))
                 {
                     string data = await reader.ReadLineAsync();
                     if (data != null)
@@ -43,25 +62,48 @@ public class TCPServer : MonoBehaviour
                     }
                     else
                     {
+                        Debug.Log("Client disconnected gracefully.");
                         break;
                     }
                 }
             }
         }
-        catch (Exception e)
+        catch (IOException ioEx)
         {
-            Debug.LogError($"Error in AcceptClientAsync: {e.Message}");
+            Debug.LogWarning($"Network error: {ioEx.Message}");
+        }
+        catch (SocketException sockEx)
+        {
+            Debug.LogWarning($"Socket error: {sockEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Unexpected error in HandleClientAsync: {ex.Message}");
         }
         finally
         {
-            Debug.Log("Disconnect: " + mClient?.Client.RemoteEndPoint);
-            mClient?.Close();
+            Debug.Log("Disconnect: " + client.Client.RemoteEndPoint);
+            client.Close(); // クライアント接続を閉じる
         }
     }
+
 
     private void OnApplicationQuit()
     {
         mTcpListener?.Stop();
-        mClient?.Close();
+        Debug.Log("Server stopped.");
     }
+
+    private bool IsClientConnected(TcpClient client)
+    {
+        try
+        {
+            return !(client.Client.Poll(1, SelectMode.SelectRead) && client.Client.Available == 0);
+        }
+        catch (SocketException)
+        {
+            return false;
+        }
+    }
+
 }

@@ -2,9 +2,9 @@ using System;
 using System.Drawing;
 using UnityEngine;
 
-public class ContourProcessor : MonoBehaviour
+public class ContourProcessor2D : MonoBehaviour
 {
-    public GameObject contour;
+    [SerializeField]
     private PolygonCollider2D polygonCollider2D;
 
     private void Start()
@@ -14,7 +14,6 @@ public class ContourProcessor : MonoBehaviour
         {
             tcpServer.OnDataReceived += ProcessContourData;
         }
-        polygonCollider2D = contour.GetComponent<PolygonCollider2D>();
     }
 
     private void ProcessContourData(string jsonData)
@@ -59,22 +58,4 @@ public class ContourProcessor : MonoBehaviour
     }
 }
 
-[Serializable]
-public class ContourData
-{
-    public Contour[] contours;
-}
-
-[Serializable]
-public class Contour
-{
-    public Vertex[] vertices;
-}
-
-[Serializable]
-public class Vertex
-{
-    public float x;
-    public float y;
-}
 
