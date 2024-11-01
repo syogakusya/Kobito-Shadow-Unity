@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 public class TCPServer : MonoBehaviour
 {
-    public string mIpAddress = "127.0.0.1";
+    public string mIpAddress = "172.31.20.20";
     public int mPortNumber = 2001;
 
     private TcpListener mTcpListener;

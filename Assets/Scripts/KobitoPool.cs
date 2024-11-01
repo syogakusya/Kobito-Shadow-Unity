@@ -6,6 +6,7 @@ public class KobitoPool : MonoBehaviour
     public GameObject kobitoPrefab; // 小人のプレハブ
     public int poolSize = 10; // プールのサイズ
     public Transform spawnPoint; // 生成地点
+    public Transform targetObject;
 
     private Queue<GameObject> kobitoPool;
 
@@ -18,7 +19,9 @@ public class KobitoPool : MonoBehaviour
         {
             GameObject kobito = Instantiate(kobitoPrefab);
             kobito.SetActive(false); // 非アクティブ化してプールに追加
-            kobito.GetComponent<KobitoController>().pool = this;
+            var kobitoController = kobito.GetComponent<KobitoController>();
+            kobitoController.target = targetObject;
+            kobitoController.pool = this;
             kobitoPool.Enqueue(kobito);
         }
     }
@@ -34,7 +37,7 @@ public class KobitoPool : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Kobito pool is empty!");
+            //Debug.LogWarning("Kobito pool is empty!");
             return null;
         }
     }
